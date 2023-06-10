@@ -1,0 +1,86 @@
+{
+  "hygiene_products": [
+    "Soap",
+    "Toothpaste",
+    "Toothbrushes",
+    "Wet wipes",
+    "Dry shampoo",
+    "Toilet paper",
+    "Deodorants",
+    "Sanitary pads",
+    "Urinary pads",
+    "Combs",
+    "Diapers (excluding sizes 1, 2, 3; adult sizes M, L, XL)"
+  ],
+  "long_term_quick_prep_food": [
+    "Canned meat",
+    "Canned fish",
+    "Canned vegetables",
+    "Sugar",
+    "Tea",
+    "Instant coffee",
+    "Instant soups",
+    "Condensed milk",
+    "Crackers",
+    "Biscuits",
+    "Dehydrated food"
+  ],
+  "cooking_equipment": [
+    "Mini alcohol stoves with burners",
+    "Lighters",
+    "Portable cookware",
+    "Disposable or unbreakable dishes (clean/new)"
+  ],
+  "other_equipment": [
+    "Charging station (EcoFlow)",
+    "Candles",
+    "Flashlights",
+    "Batteries",
+    "Power banks (minimum 20,000mAh)",
+    "Fishing waders",
+    "High rubber gloves",
+    "Sleeping mats",
+    "Clean/new sleeping bags",
+    "Folding beds (in good condition)"
+  ],
+  "water_purification": [
+    "Water filters",
+    "Water purification tablets",
+    "Portable water boiling devices (e.g., small gas stoves + cartridges)"
+  ],
+  "medications": {
+    "cardiovascular": [
+      "Corvalol",
+      "Corvalment",
+      "Valerian",
+      "Bisoprolol",
+      "Enalapril",
+      "Captopril"
+    ],
+    "anti-inflammatory": [
+      "Septefril",
+      "Streptocid"
+    ],
+    "analgesics": [
+      "Citramon",
+      "Ibuprofen",
+      "No-shpa"
+    ],
+    "cold and flu": [
+      "Paracetamol",
+      "Teraflu",
+      "Fluclid",
+      "Acetylsalicylic acid",
+      "Pharmazolin"
+    ],
+    "antiseptics": [
+      "Chlorhexidine",
+      "Iodine"
+    ],
+    "ointments": [
+      "Diclofenac gel 5%",
+      "Levomekol",
+      "Rescuer"
+    ]
+  }
+}
