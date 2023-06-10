@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="EN">
+<head>
+    <title>Organizations</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Process Organizations</button>
+    </form>
+
+    <input type="file" id="csvFileInput">
+  <table id="csvTable"></table>
+
+  <script>
+    // Function to handle file selection
+    function handleFileSelect(event) {
+      var file = event.target.files[0];
+      var reader = new FileReader();
+
+      reader.onload = function (e) {
+        var csvData = e.target.result;
+        displayCSV(csvData);
+      };
+
+      reader.readAsText(file);
+    }
+
+    // Function to display CSV data
+    function displayCSV(csvData) {
+      var rows = csvData.split("\n");
+      var table = document.getElementById("csvTable");
+
+      // Clear any existing table data
+      while (table.firstChild) {
+        table.removeChild(table.firstChild);
+      }
+
+      // Create the table headers
+      var headers = rows[0].split(",");
+      var headerRow = table.insertRow(0);
+      for (var i = 0; i < headers.length; i++) {
+        var headerCell = document.createElement("th");
+        headerCell.textContent = headers[i];
+        headerRow.appendChild(headerCell);
+      }
+
+      // Populate the table with data rows
+      for (var j = 1; j < rows.length; j++) {
+        var rowData = rows[j].split(",");
+        var dataRow = table.insertRow(j);
+        for (var k = 0; k < rowData.length; k++) {
+          var dataCell = dataRow.insertCell(k);
+          dataCell.textContent = rowData[k];
+        }
+      }
+    }
+
+    // Attach event listener to file input
+    var fileInput = document.getElementById("csvFileInput");
+    fileInput.addEventListener("change", handleFileSelect);
+  </script>
+</body>
+</html>
