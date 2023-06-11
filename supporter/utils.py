@@ -5,9 +5,9 @@ import os
 import openai
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-path_to_used_organizations = os.getenv("USED_ORGANIZATIONS")
-path_to_necessary_equip = os.getenv("NECESSARY_EQUIP")
-
+path_to_used_organizations = os.getenv("USED_ORGANIZATIONS_PATH")
+necessary_equip = os.getenv("NECESSARY_EQUIP")
+ORGANIZATION_TO_GENERATE = 5
 
 def get_organization_info() -> str:
     with open(path_to_used_organizations, "r") as f:
@@ -17,7 +17,7 @@ def get_organization_info() -> str:
 
 
 def get_equip() -> str:
-    equip = json.loads(open(path_to_necessary_equip, "r").read())
+    equip = json.loads(open(necessary_equip, "r").read())
     return ", ".join(equip)
 
 
@@ -35,21 +35,21 @@ S:
 
 You also have a list of organizations that you have already contacted. Please provide the list of contacted organizations as follows:
 
-Contacted Organizations DON`T ADD THESE ORGANIZATIONS IN YOUR RESPONSE:
+Contacted Organizations STRICTLY DON`T ADD THESE ORGANIZATIONS IN YOUR RESPONSE!:
 {get_organization_info()}
 
 Equipment that may be useful for volunteering organizations:
 {get_equip()}
 
 Instructions:
-Please generate a list of volunteering organizations in the specified format. Include at least 2 organizations in your response. Do not include any organizations that are already present in the list of contacted organizations.
+Please generate a list of volunteering organizations in the specified format. Include at least {ORGANIZATION_TO_GENERATE} organizations in your response. Do not include any organizations that are already present in the list of contacted organizations.
 
 
 Your response should be a well-structured list of volunteering organizations that have not been contacted yet and suitable for Ukraine.
 ANSWER STRICTLY STRUCTURED AS FOLLOWS:
 N:
 W:
-C:
+Contacts:
 S:
     """
 
@@ -68,7 +68,6 @@ S:
     )
 
     result = response["choices"][0]["message"]["content"].strip(" \n")
-    print(result)
 
     return result
 
@@ -122,10 +121,62 @@ def extract_links_from_csv(csv_filename):
     return links
 
 
+def generate_message(company_name, specialization):
+    personal_name = os.getenv("PERSONAL_NAME", "<YOUR_NAME>")
+    print(personal_name, "NAME")
+    example = f"""
+        My name is personal name, and I'm a volunteer with the Ukrainian organization "Тарілка" and "А що зробив ти?".
+        I wanted to reach out and inform you about the dire situation in the Kherson region, where we are currently providing assistance.
+        Due to the ongoing acts of Russian terrorism, the locals and rescuers are facing tremendous hardships.
+        In light of this, we have set up an aid station in Kherson to support those in need. The people there require
+        immediate help, particularly in the form of {get_equip()}
+        I would sincerely appreciate it if you could consider extending your support to our cause. Every contribution,
+        no matter how small, can make a significant difference in the lives of those affected. If you are willing and 
+        able to assist us, please kindly let us know. Your help would mean the world to the people of Kherson.
+        Thank you for your time and consideration.
+        Warm regards,
+        Andrii
+    """
+
+    system = """
+        You are helpful assistant that writes messages to volunteering organizations.
+    """
+
+    prompt = f"""
+        My name is {personal_name}, and I'm a volunteer with the Ukrainian organization "Тарілка" and "А що зробив ти?".
+        I wanted to reach out and inform you about the dire situation in the Kherson region,
+        where we are currently providing assistance.
+        Due to the ongoing acts of Russian terrorism, the locals and rescuers are facing tremendous hardships.
+        Your letter conveys a strong sense of concern and danger faced by the residents of the Kherson region due to acts of terrorism conducted by Russia.
+        You ask for support and assistance for people who are experiencing great hardship. You list in detail the items needed and note that even small contributions can make a huge difference in the lives of the victims.
+        Your appeal is grateful and full of hope for help.
+        INFO ABOUT ORGANIZATIONS:
+        NAME: {company_name}
+        SPECIALIZATION:{specialization}
+    """  # EXAMPLE OF LETTER ->>> {example} <<<- EXAMPLE OF LETTER
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.8,
+        max_tokens=4500,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        timeout=1000,
+    )
+
+    result = response["choices"][0]["message"]["content"].strip(" \n")
+
+    return result
+
+
 def main():
     data = get_response()
     organizations = parse_organization_data(data)
     write_organizations_to_csv("organizations.csv", organizations)
     links = extract_links_from_csv("organizations.csv")
     write_links_to_file(path_to_used_organizations, links)
-
