@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>ПОВІДОМЛЕННЯ</title>
+  <style>
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+  <script>
+    function copyText() {
+      var paragraphs = document.getElementsByClassName("paragraph");
+      var text = "";
+      for (var i = 0; i < paragraphs.length; i++) {
+        text += paragraphs[i].innerText + "\n";
+      }
+      navigator.clipboard.writeText(text);
+      alert("Текст скопійовано в буфер обміну!");
+    }
+  </script>
+</head>
+<body>
+  {{ org_name }}
+  <br>
+  <br>
+  {% for paragraph in paragraphs %}
+    <p class="paragraph">{{ paragraph }}</p>
+  {% endfor %}
+  <br>
+  <button onclick="copyText()">Скопіювати текст</button>
+</body>
+</html>
