@@ -23,6 +23,7 @@ def generate_html_table(request):
                   <th>Website</th>
                   <th>Contact Information</th>
                   <th>Specialization</th>
+                  <th>Score</th>
                   <th>Make Message</th>
                 </tr>
             '''
@@ -34,6 +35,7 @@ def generate_html_table(request):
                      <td><a href="{{ website }}">{{ website }}</a></td>
                      <td>{{ contact_info }}</td>
                      <td>{{ specialization }}</td>
+                     <td>{{ score }}</td>
                      <td><a href="/generate_message/{{ org_name }}/{{ specialization }}" target="_blank">Make Message</a></td>
                    </tr>
                    ''')
@@ -43,6 +45,7 @@ def generate_html_table(request):
             'website': org['Website'],
             'contact_info': org['Contact Information'],
             'specialization': org['Specialization'],
+            'score': org['Relevance Score'],
             'csrf_token': get_token(request),
         })
 

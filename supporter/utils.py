@@ -7,7 +7,9 @@ import openai
 openai.api_key = os.getenv("OPENAI_API_KEY")
 path_to_used_organizations = os.getenv("USED_ORGANIZATIONS_PATH")
 necessary_equip = os.getenv("NECESSARY_EQUIP")
-ORGANIZATION_TO_GENERATE = 5
+ORGANIZATION_TO_GENERATE = 10
+RELEVANT_RATE = 75
+
 
 def get_organization_info() -> str:
     with open(path_to_used_organizations, "r") as f:
@@ -17,58 +19,53 @@ def get_organization_info() -> str:
 
 
 def get_equip() -> str:
-    equip = json.loads(open(necessary_equip, "r").read())
-    return ", ".join(equip)
+    with open(necessary_equip) as json_file:
+        json_data = json.load(json_file)
+    json_string = json.dumps(json_data)
+    return json_string
+
+
+BLACKLIST = get_organization_info()
+EQUIPMENT = get_equip()
 
 
 def get_response():
-    system = """
+    print("started")
+    system = f"""
         You are helpful assistant that finds international volunteering organizations for me.
+        Don`t include these organizations in your response: {BLACKLIST}
 """
     prompt = f"""
-    You are working on creating a comprehensive directory of volunteering organizations in your area. Your goal is to generate a list of volunteering organizations with the following format:
+    Your task is to create a comprehensive directory of volunteering organizations in your area that can help 
+    to alleviate the consequences of the hydroelectric power plant explosion.
+    The desired format for each organization is as follows:
+    
+    N: (Name of the organization)
+    W: (Website of the organization)
+    C: (Contact information for the organization in the next format: 1 (555) 555-5555, jhondoe@gmail.com)
+    S: (A brief description of the organization's mission and services)
+    Your goal is to generate a well-structured list of volunteering organizations that have not been contacted yet and are suitable for Eastern Europe. Your response should include at least {ORGANIZATION_TO_GENERATE} organizations and should strictly adhere to the specified format. Please only include organizations that actually exist and provide real, working website links (base URLs, not specific pages).
 
-N:
-W:
-C:
-S:
+    
+    Additionally, you have been provided with a list of EQUIPMENT: {EQUIPMENT} that may be useful for volunteering organizations.
+    I have already contacted some organizations, which are listed in the BLACKLIST: {BLACKLIST}.
+    Please do not include any of these organizations in your response.
 
-You also have a list of organizations that you have already contacted. Please provide the list of contacted organizations as follows:
-
-Contacted Organizations STRICTLY DON`T ADD THESE ORGANIZATIONS IN YOUR RESPONSE!:
-{get_organization_info()}
-
-Equipment that may be useful for volunteering organizations:
-{get_equip()}
-
-Instructions:
-Please generate a list of volunteering organizations in the specified format. Include at least {ORGANIZATION_TO_GENERATE} organizations in your response. Do not include any organizations that are already present in the list of contacted organizations.
-
-
-Your response should be a well-structured list of volunteering organizations that have not been contacted yet and suitable for Ukraine.
-ANSWER STRICTLY STRUCTURED AS FOLLOWS:
-N:
-W:
-Contacts:
-S:
     """
 
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": system},
             {"role": "user", "content": prompt},
+            {"role": "system", "content": system},
         ],
         temperature=0.0,
-        max_tokens=4000,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0,
+        max_tokens=5000,
         timeout=1000,
     )
 
     result = response["choices"][0]["message"]["content"].strip(" \n")
-
+    print("finished")
     return result
 
 
@@ -97,6 +94,7 @@ def write_organizations_to_csv(filename, organizations):
         "Website",
         "Contact Information",
         "Specialization",
+        "Relevance Score"
     ]
 
     with open(filename, "w", newline="", encoding="utf-8") as csvfile:
@@ -105,18 +103,18 @@ def write_organizations_to_csv(filename, organizations):
         writer.writerows(organizations)
 
 
-def write_links_to_file(filename, links):
+def write_names_to_file(filename, links):
     with open(filename, "a") as f:
         for link in links:
             f.write(link + "\n")
 
 
-def extract_links_from_csv(csv_filename):
+def extract_names_from_csv(csv_filename):
     links = []
     with open(csv_filename, "r") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            link = row["Website"]
+            link = row["Organization Name"]
             links.append(link)
     return links
 
@@ -174,9 +172,60 @@ def generate_message(company_name, specialization):
     return result
 
 
+def check_for_relevant(list_to_check: list[dict]):
+    print("Start checking for relevant organizations")
+    prompt = f"""
+    Given a list of organizations and a blacklist, generate a response that checks whether the organizations entered by 
+    the user are not in their blacklist. Additionally, determine the relevance of these organizations in helping with 
+    the user's list of items. Lastly, ensure that these organizations are capable of providing assistance to citizens of Ukraine.
+    
+    Blacklist: {BLACKLIST}
+    
+    List of Organizations: {list_to_check}
+    
+    List of Items: {EQUIPMENT}
+    
+    User's Nationality: Ukrainian
+    
+    Please assign a relevance score from 1 to 100 to each organization based on how relevant they are to the user's needs.
+    Do not modify the structure of the organization list in the response save full info and simply add score to each.
+    And simply return the list of organizations with their scores without any words.
+    """
+
+    system = "Act as professional assistant that checks for relevant organizations."
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
+        max_tokens=3500,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=1,
+        timeout=1000,
+    )
+
+    result = response["choices"][0]["message"]["content"].strip(" \n")
+
+    print("Finished checking for relevant organizations")
+
+    return result
+
+
+def sort_and_filter_organizations(organizations):
+    sorted_organizations = sorted(organizations, key=lambda x: x["Relevance Score"], reverse=True)
+    filtered_organizations = [org for org in sorted_organizations if org["Relevance Score"] >= RELEVANT_RATE]
+    return filtered_organizations
+
+
 def main():
     data = get_response()
     organizations = parse_organization_data(data)
+    checks_organization = check_for_relevant(organizations)
+    organizations = sort_and_filter_organizations(eval(checks_organization))
     write_organizations_to_csv("organizations.csv", organizations)
-    links = extract_links_from_csv("organizations.csv")
-    write_links_to_file(path_to_used_organizations, links)
+    names = extract_names_from_csv("organizations.csv")
+    write_names_to_file(path_to_used_organizations, names)
