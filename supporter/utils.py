@@ -29,6 +29,7 @@ BLACKLIST = get_organization_info()
 EQUIPMENT = get_equip()
 
 
+
 def get_response():
     print("started")
     system = f"""
@@ -49,18 +50,17 @@ def get_response():
     
     Additionally, you have been provided with a list of EQUIPMENT: {EQUIPMENT} that may be useful for volunteering organizations.
     I have already contacted some organizations, which are listed in the BLACKLIST: {BLACKLIST}.
+    When you find an organization - give it a score from 0 to 1, 0 - its not in the blacklist, 1 - its in the blacklist, if the score is 1, ignore this organization and look for another one to replace it. Count only organizations that you give a score of 0. Don`t include this score in your response.
     Please do not include any of these organizations in your response.
-
     """
 
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-            {"role": "user", "content": prompt},
-            {"role": "system", "content": system},
+            {"role": "system", "content": system + prompt},
         ],
         temperature=0.0,
-        max_tokens=5000,
+        max_tokens=2900,
         timeout=1000,
     )
 
@@ -153,21 +153,15 @@ def generate_message(company_name, specialization):
         SPECIALIZATION:{specialization}
     """  # EXAMPLE OF LETTER ->>> {example} <<<- EXAMPLE OF LETTER
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.8,
-        max_tokens=4500,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0,
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=system + prompt,
+        temperature=0.0,
+        max_tokens=2900,
         timeout=1000,
     )
 
-    result = response["choices"][0]["message"]["content"].strip(" \n")
+    result = response.choices[0].text
 
     return result
 
